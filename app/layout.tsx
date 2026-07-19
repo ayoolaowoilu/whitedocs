@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  metadataBase: new URL("https://whitedocs.dev"),
+
   title: "WhiteDocs",
   description: "Free Open Source PDF Editor",
   icons: {
