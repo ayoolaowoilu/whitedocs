@@ -12,17 +12,15 @@ import {
   Layers,
   Check,
   ChevronDown,
-  Github,
   Code2,
   Heart,
 } from "lucide-react";
 import Link from "next/link";
 
-// --- Animation Variants ---
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
+} as any;
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -32,7 +30,6 @@ const staggerContainer = {
   },
 };
 
-// --- Custom Logo SVG ---
 const LogoSVG = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
@@ -48,7 +45,13 @@ const LogoSVG = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 );
 
-// --- Section Component with Scroll Trigger ---
+// Raw GitHub SVG icon
+const GithubIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+  </svg>
+);
+
 const AnimatedSection = ({
   children,
   className = "",
@@ -81,7 +84,6 @@ const AnimatedSection = ({
   );
 };
 
-// --- Feature Card ---
 const FeatureCard = ({
   icon: Icon,
   title,
@@ -115,7 +117,6 @@ const FeatureCard = ({
   );
 };
 
-// --- Main Landing Page ---
 export default function LandingPage() {
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -148,7 +149,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 text-xs font-medium transition-colors"
               >
-                <Github size={14} />
+                <GithubIcon className="w-3.5 h-3.5" />
                 Star on GitHub
               </a>
               <Link
@@ -228,7 +229,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
               >
-                <Github size={16} />
+                <GithubIcon className="w-4 h-4" />
                 View on GitHub
               </a>
             </motion.div>
@@ -264,7 +265,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Floating elements */}
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -282,7 +282,6 @@ export default function LandingPage() {
           </motion.div>
         </motion.div>
 
-        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -321,7 +320,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white text-red-600 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
               >
-                <Github size={16} />
+                <GithubIcon className="w-4 h-4" />
                 Contribute on GitHub
               </a>
             </div>
@@ -380,7 +379,6 @@ export default function LandingPage() {
           </AnimatedSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connecting line */}
             <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-px bg-gray-200" />
 
             {[
@@ -451,7 +449,7 @@ export default function LandingPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-white/10 text-white border border-white/20 px-8 py-4 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all"
                 >
-                  <Github size={18} />
+                  <GithubIcon className="w-5 h-5" />
                   Star on GitHub
                 </a>
               </motion.div>
