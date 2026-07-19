@@ -846,7 +846,7 @@ export default function PdfEditorPage() {
   }, [pages, exportName, nextFrame]);
 
   return (
-    <main className="min-h-screen bg-gray-300">
+    <main className="min-h-screen bg-gray-300 text-black">
       <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) importPdf(e.target.files[0]); e.target.value = ""; }} />
       <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); e.target.value = ""; }} />
 
