@@ -16,6 +16,7 @@ import {
   Heart,
 } from "lucide-react";
 import Link from "next/link";
+import MainNav from "./components/main_navbar";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -129,45 +130,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* --- Navigation --- */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-11">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="text-red-600">
-                <LogoSVG className="w-5 h-5" />
-              </div>
-              <span className="text-sm font-bold text-gray-900 tracking-tight">
-                WhiteDocs
-              </span>
-            </Link>
-
-            <div className="hidden md:flex items-center gap-3">
-              <a
-                href="https://github.com/yourusername/whitedocs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 text-xs font-medium transition-colors"
-              >
-                <GithubIcon className="w-3.5 h-3.5" />
-                Star on GitHub
-              </a>
-              <Link
-                href="/editor/new"
-                className="flex items-center gap-1.5 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 hover:text-gray-900 transition-all"
-              >
-                <Plus size={14} /> New PDF
-              </Link>
-              <Link
-                href="/editor"
-                className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-700 transition-all shadow-sm hover:shadow-md"
-              >
-                <Pencil size={14} /> Edit PDF
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+     <MainNav />
 
       {/* --- Hero Section --- */}
       <section ref={heroRef} className="relative pt-32 pb-20 overflow-hidden">
