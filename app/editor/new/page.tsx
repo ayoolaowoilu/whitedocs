@@ -4,13 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Image, Text, Transformer } from "react-konva";
 import useImage from "use-image";
 import jsPDF from "jspdf";
+
 import {
-  Image as ImageIcon,
-  Type as TypeIcon,
-  Trash2,
-  Copy,
-  BringToFront,
-  SendToBack,
   Bold,
   Italic,
   Underline,
@@ -21,9 +16,8 @@ import {
   Plus,
   Download,
   X,
-  FilePlus2,
-  Menu,
 } from "lucide-react";
+import Navbar from "@/app/components/EditorNavbar";
 
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
@@ -370,7 +364,6 @@ export default function Home() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const stageRef = useRef<any>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -529,7 +522,6 @@ export default function Home() {
   const addPage = () => {
     setPages((prev: any) => [...prev, { id: crypto.randomUUID(), objects: [] }]);
     setActivePage(pages.length);
-    setMobileMenuOpen(false);
   };
 
   const deletePage = (index: number) => {
@@ -610,194 +602,24 @@ export default function Home() {
         }}
       />
 
-      {/* WPS-style navbar: full-width, fixed, holds every action. Wraps and
-          collapses secondary actions into a menu on narrow / mobile screens. */}
-      <nav className="fixed inset-x-0 top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
-        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
-          <div className="flex items-center gap-1 overflow-x-auto sm:gap-2">
-            <span className="mr-1 hidden shrink-0 text-sm font-semibold text-gray-800 sm:mr-3 sm:inline">
-              Editor
-            </span>
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:px-3"
-            >
-              <ImageIcon size={16} />
-              <span className="hidden sm:inline">Image</span>
-            </button>
-
-            <button
-              onClick={addText}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:px-3"
-            >
-              <TypeIcon size={16} />
-              <span className="hidden sm:inline">Text</span>
-            </button>
-
-            <button
-              onClick={addPage}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:px-3"
-            >
-              <FilePlus2 size={16} />
-              <span className="hidden sm:inline">Add Page</span>
-            </button>
-
-            <div className="mx-1 hidden h-6 w-px bg-gray-200 sm:block" />
-
-            <div className="hidden items-center gap-1 sm:flex">
-              <button
-                onClick={duplicateSelected}
-                disabled={!selected}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Copy size={16} />
-                Duplicate
-              </button>
-              <button
-                onClick={() => reorderSelected("front")}
-                disabled={!selected}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <BringToFront size={16} />
-              </button>
-              <button
-                onClick={() => reorderSelected("back")}
-                disabled={!selected}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <SendToBack size={16} />
-              </button>
-              <div className="mx-1 h-6 w-px bg-gray-200" />
-              <button
-                onClick={deleteSelected}
-                disabled={!selected}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Trash2 size={16} />
-                Delete
-              </button>
-            </div>
-
-            <button
-              onClick={() => setMobileMenuOpen((v) => !v)}
-              className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:hidden"
-            >
-              <Menu size={16} />
-            </button>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {selectedObject?.type === "Text" && (
-              <div className="hidden items-center gap-2 rounded-lg border border-gray-200 px-2 py-1.5 sm:flex">
-                <span className="text-xs font-medium text-gray-500">Text color</span>
-                <input
-                  type="color"
-                  value={selectedObject.fill}
-                  onChange={(e) => patchSelected({ fill: e.target.value })}
-                  className="h-7 w-7 cursor-pointer rounded border border-gray-200 p-0.5"
-                  title="Text color"
-                />
-              </div>
-            )}
-
-            <button
-              onClick={openExportModal}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:px-3"
-            >
-              <Download size={16} />
-              <span className="hidden sm:inline">Export PDF</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile dropdown: duplicate / reorder / delete / text color, collapsed off the main row */}
-        {mobileMenuOpen && (
-          <div className="flex flex-wrap items-center gap-1 border-t border-gray-100 px-3 py-2 sm:hidden">
-            <button
-              onClick={duplicateSelected}
-              disabled={!selected}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Copy size={16} />
-              Duplicate
-            </button>
-            <button
-              onClick={() => reorderSelected("front")}
-              disabled={!selected}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <BringToFront size={16} />
-              Front
-            </button>
-            <button
-              onClick={() => reorderSelected("back")}
-              disabled={!selected}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <SendToBack size={16} />
-              Back
-            </button>
-            <button
-              onClick={deleteSelected}
-              disabled={!selected}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Trash2 size={16} />
-              Delete
-            </button>
-            {selectedObject?.type === "Text" && (
-              <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-2 py-1.5">
-                <span className="text-xs font-medium text-gray-500">Color</span>
-                <input
-                  type="color"
-                  value={selectedObject.fill}
-                  onChange={(e) => patchSelected({ fill: e.target.value })}
-                  className="h-7 w-7 cursor-pointer rounded border border-gray-200 p-0.5"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Page tabs: horizontally scrollable, works the same on mobile & desktop */}
-        <div className="flex items-center gap-1 overflow-x-auto border-t border-gray-100 px-3 py-1.5">
-          {pages.map((page: any, index: number) => (
-            <button
-              key={page.id}
-              onClick={() => setActivePage(index)}
-              className={`group flex shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium ${
-                index === activePage
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Page {index + 1}
-              {pages.length > 1 && (
-                <span
-                  role="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deletePage(index);
-                  }}
-                  className={`ml-1 rounded-full p-0.5 ${
-                    index === activePage ? "hover:bg-blue-700" : "hover:bg-gray-300"
-                  }`}
-                >
-                  <X size={11} />
-                </span>
-              )}
-            </button>
-          ))}
-          <button
-            onClick={addPage}
-            className="flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100"
-            title="Add page"
-          >
-            <Plus size={13} />
-          </button>
-        </div>
-      </nav>
+      <Navbar
+        pages={pages}
+        activePage={activePage}
+        onSelectPage={setActivePage}
+        onAddPage={addPage}
+        onDeletePage={deletePage}
+        onAddImage={() => fileInputRef.current?.click()}
+        onAddText={addText}
+        hasSelection={!!selected}
+        onDuplicate={duplicateSelected}
+        onBringToFront={() => reorderSelected("front")}
+        onSendToBack={() => reorderSelected("back")}
+        onDelete={deleteSelected}
+        isTextSelected={selectedObject?.type === "Text"}
+        textColor={selectedObject?.type === "Text" ? selectedObject.fill : undefined}
+        onTextColorChange={(color:any) => patchSelected({ fill: color })}
+        onExport={openExportModal}
+      />
 
       <div className="flex justify-center overflow-x-hidden p-3 pt-32 sm:pt-28">
         <div style={{ width: PAGE_WIDTH * scale, height: PAGE_HEIGHT * scale }} className="relative">
