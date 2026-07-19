@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Image, Text, Transformer } from "react-konva";
+import { Stage, Layer, Image, Text, Rect, Transformer } from "react-konva";
 import useImage from "use-image";
 import jsPDF from "jspdf";
 
@@ -16,11 +16,15 @@ import {
   Plus,
   Download,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Navbar from "@/app/components/EditorNavbar";
 
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
+const NAV_HEIGHT = 88; // MainNav (h-11) + toolbar (h-11), in px
+const SIDEBAR_WIDTH = 132;
 
 const FONT_FAMILIES = ["Arial", "Georgia", "Times New Roman", "Courier New", "Verdana"];
 
@@ -182,7 +186,6 @@ function EditableText({
 }
 
 /* --------------------------- Floating Text Popup --------------------------- */
-/* Appears directly under the selected/edited text node, WPS-style formatting bar */
 
 function TextFormatPopup({
   rect,
@@ -355,10 +358,182 @@ function ExportPdfModal({
   );
 }
 
+/* ------------------------------ Page Thumbnail ----------------------------- */
+/* Renders a real, live, non-interactive mini version of a page's contents. */
+
+function ThumbImage({ item }: { item: any }) {
+  const [image] = useImage(item.src);
+  return (
+    <Image
+      image={image}
+      x={item.x}
+      y={item.y}
+      width={item.width}
+      height={item.height}
+      rotation={item.rotation}
+    />
+  );
+}
+
+function PageThumbnail({ page, width }: { page: any; width: number }) {
+  const scale = width / PAGE_WIDTH;
+  const height = PAGE_HEIGHT * scale;
+
+  return (
+    <Stage width={width} height={height} listening={false}>
+      <Layer scaleX={scale} scaleY={scale} listening={false}>
+        <Rect x={0} y={0} width={PAGE_WIDTH} height={PAGE_HEIGHT} fill="#ffffff" />
+        {page.objects.map((object: any) => {
+          if (object.type === "Image") {
+            return <ThumbImage key={object.id} item={object} />;
+          }
+          if (object.type === "Text") {
+            return (
+              <Text
+                key={object.id}
+                text={object.text}
+                x={object.x}
+                y={object.y}
+                width={object.width}
+                fontSize={object.fontSize}
+                fontFamily={object.fontFamily}
+                fontStyle={
+                  [object.bold ? "bold" : "", object.italic ? "italic" : ""].join(" ").trim() ||
+                  "normal"
+                }
+                textDecoration={object.underline ? "underline" : ""}
+                align={object.align}
+                fill={object.fill}
+                rotation={object.rotation}
+              />
+            );
+          }
+          return null;
+        })}
+      </Layer>
+    </Stage>
+  );
+}
+
+/* -------------------------------- Page List -------------------------------- */
+/* Desktop: vertical thumbnail rail. Mobile: compact prev/next bar. */
+
+function PageSidebar({
+  pages,
+  activePage,
+  onSelectPage,
+  onAddPage,
+  onDeletePage,
+}: {
+  pages: any[];
+  activePage: number;
+  onSelectPage: (i: number) => void;
+  onAddPage: () => void;
+  onDeletePage: (i: number) => void;
+}) {
+  const THUMB_WIDTH = 108;
+
+  return (
+    <>
+      {/* Desktop thumbnail rail */}
+      <aside
+        className="fixed left-0 z-30 hidden w-[132px] overflow-y-auto border-r border-gray-200 bg-gray-50 px-3 py-4 sm:block"
+        style={{ top: NAV_HEIGHT, bottom: 0 }}
+      >
+        <div className="flex flex-col items-center gap-4">
+          {pages.map((page, index) => (
+            <div key={page.id} className="group relative">
+              <button
+                onClick={() => onSelectPage(index)}
+                className={`block overflow-hidden rounded-md border-2 bg-white shadow-sm transition ${
+                  index === activePage
+                    ? "border-red-600 ring-2 ring-red-100"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <PageThumbnail page={page} width={THUMB_WIDTH} />
+              </button>
+
+              <span
+                className={`pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-px text-[10px] font-semibold ${
+                  index === activePage ? "bg-red-600 text-white" : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {index + 1}
+              </span>
+
+              {pages.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeletePage(index);
+                  }}
+                  className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white hover:bg-red-600 group-hover:flex"
+                  title="Delete page"
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          <button
+            onClick={onAddPage}
+            className="flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-gray-300 text-gray-400 transition hover:border-red-400 hover:text-red-500"
+            title="Add page"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile compact page switcher */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between border-t border-gray-200 bg-white px-3 py-2 sm:hidden">
+        <button
+          onClick={() => onSelectPage(Math.max(0, activePage - 1))}
+          disabled={activePage === 0}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-30"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <span className="text-xs font-medium text-gray-600">
+          Page {activePage + 1} / {pages.length}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onAddPage}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
+            title="Add page"
+          >
+            <Plus size={16} />
+          </button>
+          {pages.length > 1 && (
+            <button
+              onClick={() => onDeletePage(activePage)}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
+              title="Delete page"
+            >
+              <X size={16} />
+            </button>
+          )}
+          <button
+            onClick={() => onSelectPage(Math.min(pages.length - 1, activePage + 1))}
+            disabled={activePage === pages.length - 1}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-30"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* --------------------------------- Home ---------------------------------- */
 
 export default function Home() {
-  // Each page holds its own objects; export walks every page into one PDF.
   const [pages, setPages] = useState<any[]>([{ id: crypto.randomUUID(), objects: [] }]);
   const [activePage, setActivePage] = useState(0);
 
@@ -376,11 +551,11 @@ export default function Home() {
   const [exportName, setExportName] = useState("document");
   const [exporting, setExporting] = useState(false);
 
-  // Responsive scale: shrink the page to fit narrow / mobile screens.
   const [scale, setScale] = useState(1);
   useEffect(() => {
     const compute = () => {
-      const available = window.innerWidth - 24; // small side margin
+      const isDesktop = window.innerWidth >= 640;
+      const available = window.innerWidth - (isDesktop ? SIDEBAR_WIDTH : 0) - 24;
       setScale(Math.min(1, available / PAGE_WIDTH));
     };
     compute();
@@ -400,8 +575,6 @@ export default function Home() {
 
   const selectedObject = objects.find((o: any) => o.id === selected) || null;
 
-  /* Recompute the on-screen rect (in un-scaled stage coordinates) for the
-     selected/edited node — used to place the popup / textarea. */
   const recomputeRect = (id: string) => {
     const node = nodeRefs.current[id];
     const stage = stageRef.current;
@@ -426,7 +599,6 @@ export default function Home() {
     }
   }, [editingId]);
 
-  // Switching pages clears selection/edit state so nothing dangles across pages.
   useEffect(() => {
     setSelected(null);
     setEditingId(null);
@@ -590,7 +762,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-300">
+    <main className="min-h-screen bg-gray-300 text-black">
       <input
         ref={fileInputRef}
         type="file"
@@ -603,11 +775,6 @@ export default function Home() {
       />
 
       <Navbar
-        pages={pages}
-        activePage={activePage}
-        onSelectPage={setActivePage}
-        onAddPage={addPage}
-        onDeletePage={deletePage}
         onAddImage={() => fileInputRef.current?.click()}
         onAddText={addText}
         hasSelection={!!selected}
@@ -617,11 +784,22 @@ export default function Home() {
         onDelete={deleteSelected}
         isTextSelected={selectedObject?.type === "Text"}
         textColor={selectedObject?.type === "Text" ? selectedObject.fill : undefined}
-        onTextColorChange={(color:any) => patchSelected({ fill: color })}
+        onTextColorChange={(color: any) => patchSelected({ fill: color })}
         onExport={openExportModal}
       />
 
-      <div className="flex justify-center overflow-x-hidden p-3 pt-32 sm:pt-28">
+      <PageSidebar
+        pages={pages}
+        activePage={activePage}
+        onSelectPage={setActivePage}
+        onAddPage={addPage}
+        onDeletePage={deletePage}
+      />
+
+      <div
+        className="flex justify-center overflow-x-hidden p-3 pb-16 sm:pb-3 sm:pl-[132px]"
+        style={{ paddingTop: NAV_HEIGHT + 12 }}
+      >
         <div style={{ width: PAGE_WIDTH * scale, height: PAGE_HEIGHT * scale }} className="relative">
           <div
             ref={wrapperRef}
@@ -676,8 +854,6 @@ export default function Home() {
             </Stage>
           </div>
 
-          {/* Inline edit overlay: sits exactly over the Konva text node, scaled
-              to match so it lines up on mobile too. */}
           {editingObject && popupRect && (
             <textarea
               ref={textareaRef}
@@ -710,7 +886,6 @@ export default function Home() {
             />
           )}
 
-          {/* Floating text-format popup: appears directly under the selected text */}
           {selectedObject?.type === "Text" && popupRect && (
             <TextFormatPopup rect={popupRect} scale={scale} item={selectedObject} onChange={patchSelected} />
           )}
