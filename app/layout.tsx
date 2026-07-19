@@ -13,7 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-
+  metadataBase: new URL("https://whitedocs.dev"),
+  title: "WhiteDocs",
+  description: "Free Open Source PDF Editor",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
   openGraph: {
     title: "WhiteDocs",
     description: "Free Open Source PDF Editor",
