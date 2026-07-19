@@ -1,65 +1,186 @@
-import Image from "next/image";
+"use client";
+
+import { useRef, useState } from "react";
+import { Stage, Layer, Image, Transformer } from "react-konva";
+import useImage from "use-image";
+
+const PAGE_WIDTH = 794;
+const PAGE_HEIGHT = 1123;
+
+type ImageItem = {
+  id: string;
+  src: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+};
+
+function EditableImage({
+  item,
+  selected,
+  onSelect,
+  onChange,
+}: {
+  item: ImageItem;
+  selected: boolean;
+  onSelect: () => void;
+  onChange: (item: ImageItem) => void;
+}) {
+  const [image] = useImage(item.src);
+  const shapeRef = useRef<any>(null);
+  const trRef = useRef<any>(null);
+
+  if (selected && trRef.current && shapeRef.current) {
+    trRef.current.nodes([shapeRef.current]);
+    trRef.current.getLayer()?.batchDraw();
+  }
+
+  return (
+    <>
+      <Image
+        ref={shapeRef}
+        image={image}
+        x={item.x}
+        y={item.y}
+        width={item.width}
+        height={item.height}
+        rotation={item.rotation}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={(e) =>
+          onChange({
+            ...item,
+            x: e.target.x(),
+            y: e.target.y(),
+          })
+        }
+        onTransformEnd={() => {
+          const node = shapeRef.current;
+
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+
+          node.scaleX(1);
+          node.scaleY(1);
+
+          onChange({
+            ...item,
+            x: node.x(),
+            y: node.y(),
+            rotation: node.rotation(),
+            width: Math.max(20, node.width() * scaleX),
+            height: Math.max(20, node.height() * scaleY),
+          });
+        }}
+      />
+
+      {selected && (
+        <Transformer
+          ref={trRef}
+          rotateEnabled
+          keepRatio={false}
+        />
+      )}
+    </>
+  );
+}
 
 export default function Home() {
+  const [images, setImages] = useState<ImageItem[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const uploadImage = (file: File) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          src: reader.result as string,
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+          rotation: 0,
+        },
+      ]);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const updateImage = (image: ImageItem) => {
+    setImages((prev) =>
+      prev.map((img) => (img.id === image.id ? image : img))
+    );
+  };
+
+  const deleteSelected = () => {
+    if (!selected) return;
+
+    setImages((prev) => prev.filter((i) => i.id !== selected));
+    setSelected(null);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen bg-gray-300 p-6">
+
+      <div className="flex gap-4 mb-5">
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              uploadImage(e.target.files[0]);
+            }
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <button
+          onClick={deleteSelected}
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          Delete
+        </button>
+
+      </div>
+
+      <div className="flex justify-center">
+
+        <Stage
+          width={PAGE_WIDTH}
+          height={PAGE_HEIGHT}
+          style={{
+            background: "white",
+            boxShadow: "0 0 20px rgba(0,0,0,.2)",
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.target.getStage()) {
+              setSelected(null);
+            }
+          }}
+        >
+          <Layer>
+
+            {images.map((image) => (
+              <EditableImage
+                key={image.id}
+                item={image}
+                selected={selected === image.id}
+                onSelect={() => setSelected(image.id)}
+                onChange={updateImage}
+              />
+            ))}
+
+          </Layer>
+        </Stage>
+
+      </div>
+    </main>
   );
 }
