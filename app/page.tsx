@@ -12,6 +12,9 @@ import {
   Layers,
   Check,
   ChevronDown,
+  Github,
+  Code2,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -19,7 +22,7 @@ import Link from "next/link";
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-} as any;
+};
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -27,11 +30,6 @@ const staggerContainer = {
     opacity: 1,
     transition: { staggerChildren: 0.15 },
   },
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
 };
 
 // --- Custom Logo SVG ---
@@ -143,7 +141,16 @@ export default function LandingPage() {
               </span>
             </Link>
 
-            <div className="hidden md:flex items-center gap-1.5">
+            <div className="hidden md:flex items-center gap-3">
+              <a
+                href="https://github.com/yourusername/whitedocs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 text-xs font-medium transition-colors"
+              >
+                <Github size={14} />
+                Star on GitHub
+              </a>
               <Link
                 href="/editor/new"
                 className="flex items-center gap-1.5 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 hover:text-gray-900 transition-all"
@@ -174,8 +181,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-red-600 text-xs font-medium mb-6"
             >
-              <Zap size={12} />
-              <span>Free PDF editor — no signup required</span>
+              <Code2 size={12} />
+              <span>Free & Open Source</span>
             </motion.div>
 
             <motion.h1
@@ -184,8 +191,8 @@ export default function LandingPage() {
               transition={{ duration: 0.7, delay: 0.1 }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6"
             >
-              Edit PDFs like{" "}
-              <span className="text-red-600">editing a Word doc</span>
+              The free open source{" "}
+              <span className="text-red-600">PDF editor</span>
             </motion.h1>
 
             <motion.p
@@ -194,8 +201,8 @@ export default function LandingPage() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg text-gray-500 mb-10 leading-relaxed"
             >
-              WhiteDocs is the fastest way to create, edit, and manage PDFs
-              online. No bloat. No watermarks. Just clean documents.
+              WhiteDocs is a free, open source PDF editor that runs entirely in
+              your browser. No paywalls, no tracking, no bullshit.
             </motion.p>
 
             <motion.div
@@ -215,13 +222,15 @@ export default function LandingPage() {
                   className="group-hover:translate-x-1 transition-transform"
                 />
               </Link>
-              <Link
-                href="/editor"
+              <a
+                href="https://github.com/yourusername/whitedocs"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
               >
-                <Pencil size={16} />
-                Edit Existing PDF
-              </Link>
+                <Github size={16} />
+                View on GitHub
+              </a>
             </motion.div>
           </div>
 
@@ -290,15 +299,45 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* --- Open Source Banner --- */}
+      <section className="py-12 bg-red-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg">100% Free & Open Source</h3>
+                  <p className="text-red-100 text-sm">
+                    Licensed under MIT. Fork it, self-host it, make it yours.
+                  </p>
+                </div>
+              </div>
+              <a
+                href="https://github.com/yourusername/whitedocs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-white text-red-600 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+              >
+                <Github size={16} />
+                Contribute on GitHub
+              </a>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
       {/* --- Features Section --- */}
       <section className="py-24 bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Everything you need
+              Why choose WhiteDocs?
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
-              A complete PDF toolkit designed for speed and simplicity.
+              Built by the community, for the community. No corporate nonsense.
             </p>
           </AnimatedSection>
 
@@ -322,9 +361,9 @@ export default function LandingPage() {
               delay={0.15}
             />
             <FeatureCard
-              icon={Layers}
-              title="All-in-One"
-              description="Create, edit, merge, split, and convert. One tool for every PDF task you have."
+              icon={Code2}
+              title="Open Source"
+              description="Full source code available on GitHub. Audit it, fork it, or contribute back."
               delay={0.3}
             />
           </motion.div>
@@ -382,41 +421,59 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <AnimatedSection>
             <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-              Ready to ditch your old PDF tool?
+              Free forever. No catch.
             </h2>
             <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto">
-              Join thousands of users who switched to WhiteDocs for faster,
-              cleaner PDF editing.
+              WhiteDocs is and always will be free and open source. No premium
+              tiers, no hidden fees, no data mining.
             </p>
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Link
-                href="/editor/new"
-                className="inline-flex items-center gap-2 bg-red-600 text-white px-8 py-4 rounded-lg text-sm font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-900/50"
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Plus size={18} />
-                Start Editing Now
-                <ArrowRight size={16} />
-              </Link>
-            </motion.div>
+                <Link
+                  href="/editor/new"
+                  className="inline-flex items-center gap-2 bg-red-600 text-white px-8 py-4 rounded-lg text-sm font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-900/50"
+                >
+                  <Plus size={18} />
+                  Start Editing Now
+                  <ArrowRight size={16} />
+                </Link>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <a
+                  href="https://github.com/yourusername/whitedocs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-white/10 text-white border border-white/20 px-8 py-4 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all"
+                >
+                  <Github size={18} />
+                  Star on GitHub
+                </a>
+              </motion.div>
+            </div>
           </AnimatedSection>
         </div>
       </section>
 
       {/* --- Footer --- */}
       <footer className="py-8 bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <LogoSVG className="w-4 h-4 text-gray-400" />
             <span className="text-sm font-semibold text-gray-600">
               WhiteDocs
             </span>
           </div>
-          <p className="text-xs text-gray-400">
-            Built for speed. No bullshit.
-          </p>
+          <div className="flex items-center gap-6 text-xs text-gray-400">
+            <span>Free Open Source PDF Editor</span>
+            <a href="#" className="hover:text-gray-600 transition-colors">MIT License</a>
+            <a href="#" className="hover:text-gray-600 transition-colors">GitHub</a>
+          </div>
         </div>
       </footer>
     </div>
