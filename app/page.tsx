@@ -315,7 +315,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <a
-                href="https://github.com/yourusername/whitedocs"
+                href="https://github.com/ayoolaowoilu/whitedocs"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white text-red-600 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
@@ -444,7 +444,7 @@ export default function LandingPage() {
                 whileTap={{ scale: 0.98 }}
               >
                 <a
-                  href="https://github.com/yourusername/whitedocs"
+                  href="https://github.com/ayoolaowoilu/whitedocs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-white/10 text-white border border-white/20 px-8 py-4 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all"
