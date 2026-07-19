@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Image, Text, Rect, Transformer } from "react-konva";
 import useImage from "use-image";
 import jsPDF from "jspdf";
+import { motion } from "framer-motion";
 
 import {
   Bold,
@@ -16,19 +17,18 @@ import {
   Plus,
   Download,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import Navbar from "@/app/components/EditorNavbar";
 
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
-const NAV_HEIGHT = 88; // MainNav (h-11) + toolbar (h-11), in px
-const SIDEBAR_WIDTH = 132;
+const NAV_HEIGHT = 88;
 
 const FONT_FAMILIES = ["Arial", "Georgia", "Times New Roman", "Courier New", "Verdana"];
 
-/* ----------------------------- Editable Image ---------------------------- */
+type Selection = { page: number; id: string } | null;
+
+
 
 function EditableImage({
   item,
@@ -96,7 +96,7 @@ function EditableImage({
   );
 }
 
-/* ------------------------------ Editable Text ----------------------------- */
+
 
 function EditableText({
   item,
@@ -185,7 +185,7 @@ function EditableText({
   );
 }
 
-/* --------------------------- Floating Text Popup --------------------------- */
+
 
 function TextFormatPopup({
   rect,
@@ -290,7 +290,7 @@ function TextFormatPopup({
   );
 }
 
-/* ------------------------------ Export Modal ------------------------------ */
+
 
 function ExportPdfModal({
   value,
@@ -358,14 +358,14 @@ function ExportPdfModal({
   );
 }
 
-/* ------------------------------ Page Thumbnail ----------------------------- */
-/* Renders a real, live, non-interactive mini version of a page's contents. */
 
-function ThumbImage({ item }: { item: any }) {
-  const [image] = useImage(item.src);
+
+function StaticExportImage({ item, imageCache }: { item: any; imageCache: Map<string, HTMLImageElement> }) {
+  const img = imageCache.get(item.src);
+  if (!img) return null;
   return (
     <Image
-      image={image}
+      image={img}
       x={item.x}
       y={item.y}
       width={item.width}
@@ -375,187 +375,280 @@ function ThumbImage({ item }: { item: any }) {
   );
 }
 
-function PageThumbnail({ page, width }: { page: any; width: number }) {
-  const scale = width / PAGE_WIDTH;
-  const height = PAGE_HEIGHT * scale;
-
-  return (
-    <Stage width={width} height={height} listening={false}>
-      <Layer scaleX={scale} scaleY={scale} listening={false}>
-        <Rect x={0} y={0} width={PAGE_WIDTH} height={PAGE_HEIGHT} fill="#ffffff" />
-        {page.objects.map((object: any) => {
-          if (object.type === "Image") {
-            return <ThumbImage key={object.id} item={object} />;
-          }
-          if (object.type === "Text") {
-            return (
-              <Text
-                key={object.id}
-                text={object.text}
-                x={object.x}
-                y={object.y}
-                width={object.width}
-                fontSize={object.fontSize}
-                fontFamily={object.fontFamily}
-                fontStyle={
-                  [object.bold ? "bold" : "", object.italic ? "italic" : ""].join(" ").trim() ||
-                  "normal"
-                }
-                textDecoration={object.underline ? "underline" : ""}
-                align={object.align}
-                fill={object.fill}
-                rotation={object.rotation}
-              />
-            );
-          }
-          return null;
-        })}
-      </Layer>
-    </Stage>
-  );
-}
-
-/* -------------------------------- Page List -------------------------------- */
-/* Desktop: vertical thumbnail rail. Mobile: compact prev/next bar. */
-
-function PageSidebar({
-  pages,
-  activePage,
-  onSelectPage,
-  onAddPage,
-  onDeletePage,
+function ExportStage({
+  page,
+  imageCache,
+  stageRef,
 }: {
-  pages: any[];
-  activePage: number;
-  onSelectPage: (i: number) => void;
-  onAddPage: () => void;
-  onDeletePage: (i: number) => void;
+  page: any | null;
+  imageCache: Map<string, HTMLImageElement>;
+  stageRef: React.RefObject<any>;
 }) {
-  const THUMB_WIDTH = 108;
-
   return (
-    <>
-      {/* Desktop thumbnail rail */}
-      <aside
-        className="fixed left-0 z-30 hidden w-[132px] overflow-y-auto border-r border-gray-200 bg-gray-50 px-3 py-4 sm:block"
-        style={{ top: NAV_HEIGHT, bottom: 0 }}
-      >
-        <div className="flex flex-col items-center gap-4">
-          {pages.map((page, index) => (
-            <div key={page.id} className="group relative">
-              <button
-                onClick={() => onSelectPage(index)}
-                className={`block overflow-hidden rounded-md border-2 bg-white shadow-sm transition ${
-                  index === activePage
-                    ? "border-red-600 ring-2 ring-red-100"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <PageThumbnail page={page} width={THUMB_WIDTH} />
-              </button>
-
-              <span
-                className={`pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-px text-[10px] font-semibold ${
-                  index === activePage ? "bg-red-600 text-white" : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                {index + 1}
-              </span>
-
-              {pages.length > 1 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeletePage(index);
-                  }}
-                  className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white hover:bg-red-600 group-hover:flex"
-                  title="Delete page"
-                >
-                  <X size={11} />
-                </button>
-              )}
-            </div>
-          ))}
-
-          <button
-            onClick={onAddPage}
-            className="flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-gray-300 text-gray-400 transition hover:border-red-400 hover:text-red-500"
-            title="Add page"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-      </aside>
-
-      {/* Mobile compact page switcher */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between border-t border-gray-200 bg-white px-3 py-2 sm:hidden">
-        <button
-          onClick={() => onSelectPage(Math.max(0, activePage - 1))}
-          disabled={activePage === 0}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-30"
-        >
-          <ChevronLeft size={16} />
-        </button>
-
-        <span className="text-xs font-medium text-gray-600">
-          Page {activePage + 1} / {pages.length}
-        </span>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={onAddPage}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
-            title="Add page"
-          >
-            <Plus size={16} />
-          </button>
-          {pages.length > 1 && (
-            <button
-              onClick={() => onDeletePage(activePage)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
-              title="Delete page"
-            >
-              <X size={16} />
-            </button>
-          )}
-          <button
-            onClick={() => onSelectPage(Math.min(pages.length - 1, activePage + 1))}
-            disabled={activePage === pages.length - 1}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    </>
+    <div style={{ position: "fixed", top: 0, left: -99999, pointerEvents: "none" }}>
+      <Stage ref={stageRef} width={PAGE_WIDTH} height={PAGE_HEIGHT}>
+        <Layer>
+          <Rect x={0} y={0} width={PAGE_WIDTH} height={PAGE_HEIGHT} fill="#ffffff" />
+          {page?.objects.map((object: any) => {
+            if (object.type === "Image") {
+              return <StaticExportImage key={object.id} item={object} imageCache={imageCache} />;
+            }
+            if (object.type === "Text") {
+              return (
+                <Text
+                  key={object.id}
+                  text={object.text}
+                  x={object.x}
+                  y={object.y}
+                  width={object.width}
+                  fontSize={object.fontSize}
+                  fontFamily={object.fontFamily}
+                  fontStyle={
+                    [object.bold ? "bold" : "", object.italic ? "italic" : ""].join(" ").trim() ||
+                    "normal"
+                  }
+                  textDecoration={object.underline ? "underline" : ""}
+                  align={object.align}
+                  fill={object.fill}
+                  rotation={object.rotation}
+                />
+              );
+            }
+            return null;
+          })}
+        </Layer>
+      </Stage>
+    </div>
   );
 }
 
-/* --------------------------------- Home ---------------------------------- */
+function preloadImage(src: string, cache: Map<string, HTMLImageElement>) {
+  return new Promise<void>((resolve) => {
+    if (cache.has(src)) return resolve();
+    const img = new window.Image();
+    img.onload = () => {
+      cache.set(src, img);
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
+
+function PageBlock({
+  page,
+  pageIndex,
+  scale,
+  selected,
+  editingId,
+  onFocusPage,
+  onSelectObject,
+  onDeselect,
+  onUpdateObject,
+  onStartEditing,
+  onCommitEditing,
+  onDeletePage,
+  canDelete,
+}: {
+  page: any;
+  pageIndex: number;
+  scale: number;
+  selected: Selection;
+  editingId: Selection;
+  onFocusPage: (i: number) => void;
+  onSelectObject: (i: number, id: string) => void;
+  onDeselect: () => void;
+  onUpdateObject: (i: number, item: any) => void;
+  onStartEditing: (i: number, id: string) => void;
+  onCommitEditing: (i: number, value: string) => void;
+  onDeletePage: (i: number) => void;
+  canDelete: boolean;
+}) {
+  const stageRef = useRef<any>(null);
+  const nodeRefs = useRef<Record<string, any>>({});
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [popupRect, setPopupRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  const selId = selected?.page === pageIndex ? selected.id : null;
+  const editId = editingId?.page === pageIndex ? editingId.id : null;
+
+  const selectedObject = page.objects.find((o: any) => o.id === selId) || null;
+  const editingObject = page.objects.find((o: any) => o.id === editId) || null;
+
+  const recomputeRect = (id: string) => {
+    const node = nodeRefs.current[id];
+    const stage = stageRef.current;
+    if (!node || !stage) return;
+    setPopupRect(node.getClientRect({ relativeTo: stage }));
+  };
+
+  useEffect(() => {
+    if (selId && selectedObject?.type === "Text") {
+      recomputeRect(selId);
+    } else {
+      setPopupRect(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selId, page.objects]);
+
+  useEffect(() => {
+    if (editId && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, [editId]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="group relative"
+      style={{ width: PAGE_WIDTH * scale, height: PAGE_HEIGHT * scale }}
+    >
+      {/* page number + delete, shown on hover */}
+      <div className="pointer-events-none absolute -top-6 left-0 flex w-full items-center justify-between">
+        <span className="text-[11px] font-medium text-gray-500">Page {pageIndex + 1}</span>
+        {canDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeletePage(pageIndex);
+            }}
+            className="pointer-events-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-gray-400 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+          >
+            <X size={12} /> Remove page
+          </button>
+        )}
+      </div>
+
+      <div
+        className="relative origin-top-left"
+        style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT, transform: `scale(${scale})` }}
+      >
+        <Stage
+          ref={stageRef}
+          width={PAGE_WIDTH}
+          height={PAGE_HEIGHT}
+          style={{ background: "white", boxShadow: "0 0 20px rgba(0,0,0,.2)" }}
+          onMouseDown={(e) => {
+            onFocusPage(pageIndex);
+            if (e.target === e.target.getStage()) {
+              onDeselect();
+              if (editId) onCommitEditing(pageIndex, editingObject?.text ?? "");
+            }
+          }}
+        >
+          <Layer>
+            {page.objects.map((object: any) => {
+              if (object.type === "Image") {
+                return (
+                  <EditableImage
+                    key={object.id}
+                    item={object}
+                    selected={selId === object.id}
+                    onSelect={() => {
+                      onFocusPage(pageIndex);
+                      onSelectObject(pageIndex, object.id);
+                    }}
+                    onChange={(item) => onUpdateObject(pageIndex, item)}
+                  />
+                );
+              }
+              if (object.type === "Text") {
+                return (
+                  <EditableText
+                    key={object.id}
+                    item={object}
+                    selected={selId === object.id}
+                    isEditing={editId === object.id}
+                    onSelect={() => {
+                      onFocusPage(pageIndex);
+                      onSelectObject(pageIndex, object.id);
+                    }}
+                    onDblClick={() => {
+                      recomputeRect(object.id);
+                      onStartEditing(pageIndex, object.id);
+                    }}
+                    onChange={(item) => onUpdateObject(pageIndex, item)}
+                    registerNode={(node) => (nodeRefs.current[object.id] = node)}
+                  />
+                );
+              }
+              return null;
+            })}
+          </Layer>
+        </Stage>
+
+        {editingObject && popupRect && (
+          <textarea
+            ref={textareaRef}
+            defaultValue={editingObject.text}
+            onBlur={(e) => onCommitEditing(pageIndex, e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") onCommitEditing(pageIndex, editingObject.text);
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onCommitEditing(pageIndex, (e.target as HTMLTextAreaElement).value);
+              }
+            }}
+            className="absolute z-20 resize-none overflow-hidden border-2 border-blue-400 bg-white/90 outline-none"
+            style={{
+              top: popupRect.y,
+              left: popupRect.x,
+              width: Math.max(popupRect.width, 40),
+              minHeight: popupRect.height,
+              fontSize: editingObject.fontSize,
+              fontFamily: editingObject.fontFamily,
+              fontWeight: editingObject.bold ? "bold" : "normal",
+              fontStyle: editingObject.italic ? "italic" : "normal",
+              textDecoration: editingObject.underline ? "underline" : "none",
+              textAlign: editingObject.align,
+              color: editingObject.fill,
+              lineHeight: 1.2,
+              padding: 0,
+            }}
+          />
+        )}
+
+        {selectedObject?.type === "Text" && !editingObject && popupRect && (
+          <TextFormatPopup
+            rect={popupRect}
+            scale={1}
+            item={selectedObject}
+            onChange={(patch) => onUpdateObject(pageIndex, { ...selectedObject, ...patch })}
+          />
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 
 export default function Home() {
   const [pages, setPages] = useState<any[]>([{ id: crypto.randomUUID(), objects: [] }]);
   const [activePage, setActivePage] = useState(0);
 
-  const [selected, setSelected] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Selection>(null);
+  const [editingId, setEditingId] = useState<Selection>(null);
 
-  const stageRef = useRef<any>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const nodeRefs = useRef<Record<string, any>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const [popupRect, setPopupRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportName, setExportName] = useState("document");
   const [exporting, setExporting] = useState(false);
 
+  const [exportPage, setExportPage] = useState<any | null>(null);
+  const exportStageRef = useRef<any>(null);
+  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+
   const [scale, setScale] = useState(1);
   useEffect(() => {
     const compute = () => {
-      const isDesktop = window.innerWidth >= 640;
-      const available = window.innerWidth - (isDesktop ? SIDEBAR_WIDTH : 0) - 24;
+      const available = window.innerWidth - 24;
       setScale(Math.min(1, available / PAGE_WIDTH));
     };
     compute();
@@ -563,167 +656,179 @@ export default function Home() {
     return () => window.removeEventListener("resize", compute);
   }, []);
 
-  const objects = pages[activePage]?.objects ?? [];
+ 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let best: any = null;
+        entries.forEach((entry) => {
+          const index = Number((entry.target as HTMLElement).dataset.pageIndex);
+          if (entry.isIntersecting && (!best || entry.intersectionRatio > best.ratio)) {
+            best = { ratio: entry.intersectionRatio, index };
+          }
+        });
+        if (best) setActivePage(best.index);
+      },
+      { threshold: [0.25, 0.5, 0.75] }
+    );
 
-  const setObjects = (updater: any) => {
+    Object.values(pageRefs.current).forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, [pages.length]);
+
+  const selectedObject =
+    selected != null ? pages[selected.page]?.objects.find((o: any) => o.id === selected.id) : null;
+
+
+
+  const updateObjectOnPage = (pageIndex: number, item: any) => {
     setPages((prev: any) =>
       prev.map((p: any, i: number) =>
-        i === activePage ? { ...p, objects: typeof updater === "function" ? updater(p.objects) : updater } : p
+        i === pageIndex ? { ...p, objects: p.objects.map((o: any) => (o.id === item.id ? item : o)) } : p
       )
     );
   };
 
-  const selectedObject = objects.find((o: any) => o.id === selected) || null;
-
-  const recomputeRect = (id: string) => {
-    const node = nodeRefs.current[id];
-    const stage = stageRef.current;
-    if (!node || !stage) return;
-    const box = node.getClientRect({ relativeTo: stage });
-    setPopupRect(box);
+  const patchSelected = (patch: any) => {
+    if (!selected || !selectedObject) return;
+    updateObjectOnPage(selected.page, { ...selectedObject, ...patch });
   };
-
-  useEffect(() => {
-    if (selected && objects.find((o: any) => o.id === selected)?.type === "Text") {
-      recomputeRect(selected);
-    } else {
-      setPopupRect(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, objects]);
-
-  useEffect(() => {
-    if (editingId && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
-    }
-  }, [editingId]);
-
-  useEffect(() => {
-    setSelected(null);
-    setEditingId(null);
-  }, [activePage]);
-
-  /* ------------------------------ CRUD helpers ------------------------------ */
 
   const uploadImage = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       const id = crypto.randomUUID();
-      setObjects((prev: any) => [
-        ...prev,
-        {
-          type: "Image",
-          id,
-          src: reader.result as string,
-          x: 100,
-          y: 100,
-          width: 200,
-          height: 200,
-          rotation: 0,
-        },
-      ]);
-      setSelected(id);
+      setPages((prev: any) =>
+        prev.map((p: any, i: number) =>
+          i === activePage
+            ? {
+                ...p,
+                objects: [
+                  ...p.objects,
+                  {
+                    type: "Image",
+                    id,
+                    src: reader.result as string,
+                    x: 100,
+                    y: 100,
+                    width: 200,
+                    height: 200,
+                    rotation: 0,
+                  },
+                ],
+              }
+            : p
+        )
+      );
+      setSelected({ page: activePage, id });
     };
     reader.readAsDataURL(file);
   };
 
   const addText = () => {
     const id = crypto.randomUUID();
-    setObjects((prev: any) => [
-      ...prev,
-      {
-        type: "Text",
-        id,
-        text: "Double click to edit",
-        x: 120,
-        y: 120,
-        width: 220,
-        fontSize: 24,
-        fontFamily: "Arial",
-        fill: "#1a1a1a",
-        align: "left",
-        bold: false,
-        italic: false,
-        underline: false,
-        rotation: 0,
-      },
-    ]);
-    setSelected(id);
-    setTimeout(() => setEditingId(id), 0);
-  };
-
-  const updateObject = (item: any) => {
-    setObjects((prev: any) => prev.map((o: any) => (o.id === item.id ? item : o)));
-  };
-
-  const patchSelected = (patch: any) => {
-    if (!selectedObject) return;
-    updateObject({ ...selectedObject, ...patch });
+    setPages((prev: any) =>
+      prev.map((p: any, i: number) =>
+        i === activePage
+          ? {
+              ...p,
+              objects: [
+                ...p.objects,
+                {
+                  type: "Text",
+                  id,
+                  text: "Double click to edit",
+                  x: 120,
+                  y: 120,
+                  width: 220,
+                  fontSize: 24,
+                  fontFamily: "Arial",
+                  fill: "#1a1a1a",
+                  align: "left",
+                  bold: false,
+                  italic: false,
+                  underline: false,
+                  rotation: 0,
+                },
+              ],
+            }
+          : p
+      )
+    );
+    setSelected({ page: activePage, id });
+    setTimeout(() => setEditingId({ page: activePage, id }), 0);
   };
 
   const deleteSelected = () => {
     if (!selected) return;
-    setObjects((prev: any) => prev.filter((o: any) => o.id !== selected));
+    const { page, id } = selected;
+    setPages((prev: any) =>
+      prev.map((p: any, i: number) => (i === page ? { ...p, objects: p.objects.filter((o: any) => o.id !== id) } : p))
+    );
     setSelected(null);
     setEditingId(null);
   };
 
   const duplicateSelected = () => {
-    if (!selectedObject) return;
+    if (!selected || !selectedObject) return;
     const id = crypto.randomUUID();
-    setObjects((prev: any) => [...prev, { ...selectedObject, id, x: selectedObject.x + 24, y: selectedObject.y + 24 }]);
-    setSelected(id);
+    const { page } = selected;
+    setPages((prev: any) =>
+      prev.map((p: any, i: number) =>
+        i === page
+          ? { ...p, objects: [...p.objects, { ...selectedObject, id, x: selectedObject.x + 24, y: selectedObject.y + 24 }] }
+          : p
+      )
+    );
+    setSelected({ page, id });
   };
 
   const reorderSelected = (dir: "front" | "back") => {
     if (!selected) return;
-    setObjects((prev: any) => {
-      const idx = prev.findIndex((o: any) => o.id === selected);
-      if (idx === -1) return prev;
-      const arr = [...prev];
-      const [item] = arr.splice(idx, 1);
-      if (dir === "front") arr.push(item);
-      else arr.unshift(item);
-      return arr;
-    });
+    const { page, id } = selected;
+    setPages((prev: any) =>
+      prev.map((p: any, i: number) => {
+        if (i !== page) return p;
+        const idx = p.objects.findIndex((o: any) => o.id === id);
+        if (idx === -1) return p;
+        const arr = [...p.objects];
+        const [item] = arr.splice(idx, 1);
+        if (dir === "front") arr.push(item);
+        else arr.unshift(item);
+        return { ...p, objects: arr };
+      })
+    );
   };
 
-  /* --------------------------------- Pages ---------------------------------- */
+ 
 
   const addPage = () => {
-    setPages((prev: any) => [...prev, { id: crypto.randomUUID(), objects: [] }]);
-    setActivePage(pages.length);
+    const newPage = { id: crypto.randomUUID(), objects: [] };
+    setPages((prev: any) => [...prev, newPage]);
+    setTimeout(() => {
+      pageRefs.current[newPage.id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const deletePage = (index: number) => {
-    if (pages.length <= 1) return;
-    setPages((prev: any) => prev.filter((_: any, i: number) => i !== index));
-    setActivePage((prevActive) => {
-      if (index < prevActive) return prevActive - 1;
-      if (index === prevActive) return Math.max(0, index - 1);
-      return prevActive;
+    setPages((prev: any) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_: any, i: number) => i !== index);
     });
+    setSelected(null);
+    setEditingId(null);
   };
 
-  /* ------------------------------- Text editing ------------------------------ */
 
-  const startEditing = (id: string) => {
-    recomputeRect(id);
-    setEditingId(id);
-  };
-
-  const commitEditing = (value: string) => {
-    if (editingId) {
-      const obj = objects.find((o: any) => o.id === editingId);
-      if (obj) updateObject({ ...obj, text: value || "" });
+  const commitEditing = (pageIndex: number, value: string) => {
+    if (editingId && editingId.page === pageIndex) {
+      const obj = pages[pageIndex]?.objects.find((o: any) => o.id === editingId.id);
+      if (obj) updateObjectOnPage(pageIndex, { ...obj, text: value || "" });
     }
     setEditingId(null);
   };
 
-  const editingObject = editingId ? objects.find((o: any) => o.id === editingId) : null;
-
-  /* --------------------------------- Export --------------------------------- */
+ 
 
   const openExportModal = () => {
     setSelected(null);
@@ -735,24 +840,28 @@ export default function Home() {
   const nextFrame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   const confirmExport = async () => {
-    const stage = stageRef.current;
-    if (!stage) return;
     setExporting(true);
 
-    const originalPage = activePage;
+    const allSrcs = new Set<string>();
+    pages.forEach((p: any) =>
+      p.objects.forEach((o: any) => {
+        if (o.type === "Image") allSrcs.add(o.src);
+      })
+    );
+    await Promise.all(Array.from(allSrcs).map((src) => preloadImage(src, imageCache.current)));
+
     const pdf = new jsPDF({ unit: "px", format: [PAGE_WIDTH, PAGE_HEIGHT] });
 
     for (let i = 0; i < pages.length; i++) {
-      if (i !== activePage) setActivePage(i);
+      setExportPage(pages[i]);
       await nextFrame();
 
-      const dataUrl = stage.toDataURL({ pixelRatio: 2, mimeType: "image/png" });
+      const dataUrl = exportStageRef.current.toDataURL({ pixelRatio: 2, mimeType: "image/png" });
       if (i > 0) pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
       pdf.addImage(dataUrl, "PNG", 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
     }
 
-    setActivePage(originalPage);
-    await nextFrame();
+    setExportPage(null);
 
     const safeName = exportName.trim().replace(/\.pdf$/i, "") || "document";
     pdf.save(`${safeName}.pdf`);
@@ -777,6 +886,7 @@ export default function Home() {
       <Navbar
         onAddImage={() => fileInputRef.current?.click()}
         onAddText={addText}
+        onAddPage={addPage}
         hasSelection={!!selected}
         onDuplicate={duplicateSelected}
         onBringToFront={() => reorderSelected("front")}
@@ -786,111 +896,53 @@ export default function Home() {
         textColor={selectedObject?.type === "Text" ? selectedObject.fill : undefined}
         onTextColorChange={(color: any) => patchSelected({ fill: color })}
         onExport={openExportModal}
+        pageLabel={`Page ${activePage + 1} / ${pages.length}`}
       />
 
-      <PageSidebar
-        pages={pages}
-        activePage={activePage}
-        onSelectPage={setActivePage}
-        onAddPage={addPage}
-        onDeletePage={deletePage}
-      />
-
+    
       <div
-        className="flex justify-center overflow-x-hidden p-3 pb-16 sm:pb-3 sm:pl-[132px]"
-        style={{ paddingTop: NAV_HEIGHT + 12 }}
+        ref={scrollContainerRef}
+        className="scroll-smooth flex flex-col items-center gap-10 overflow-y-auto px-3 pb-16"
+        style={{ paddingTop: NAV_HEIGHT + 24, height: "100vh" }}
       >
-        <div style={{ width: PAGE_WIDTH * scale, height: PAGE_HEIGHT * scale }} className="relative">
+        {pages.map((page, index) => (
           <div
-            ref={wrapperRef}
-            className="relative origin-top-left"
-            style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT, transform: `scale(${scale})` }}
+            key={page.id}
+            data-page-index={index}
+            ref={(el) => {
+              pageRefs.current[page.id] = el;
+            }}
           >
-            <Stage
-              ref={stageRef}
-              width={PAGE_WIDTH}
-              height={PAGE_HEIGHT}
-              style={{
-                background: "white",
-                boxShadow: "0 0 20px rgba(0,0,0,.2)",
-              }}
-              onMouseDown={(e) => {
-                if (e.target === e.target.getStage()) {
-                  setSelected(null);
-                  if (editingId) commitEditing(editingObject?.text ?? "");
-                }
-              }}
-            >
-              <Layer>
-                {objects.map((object: any) => {
-                  if (object.type === "Image") {
-                    return (
-                      <EditableImage
-                        key={object.id}
-                        item={object}
-                        selected={selected === object.id}
-                        onSelect={() => setSelected(object.id)}
-                        onChange={updateObject}
-                      />
-                    );
-                  }
-                  if (object.type === "Text") {
-                    return (
-                      <EditableText
-                        key={object.id}
-                        item={object}
-                        selected={selected === object.id}
-                        isEditing={editingId === object.id}
-                        onSelect={() => setSelected(object.id)}
-                        onDblClick={() => startEditing(object.id)}
-                        onChange={updateObject}
-                        registerNode={(node) => (nodeRefs.current[object.id] = node)}
-                      />
-                    );
-                  }
-                  return null;
-                })}
-              </Layer>
-            </Stage>
-          </div>
-
-          {editingObject && popupRect && (
-            <textarea
-              ref={textareaRef}
-              defaultValue={editingObject.text}
-              onBlur={(e) => commitEditing(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") commitEditing(editingObject.text);
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  commitEditing((e.target as HTMLTextAreaElement).value);
-                }
-              }}
-              className="absolute z-20 resize-none overflow-hidden border-2 border-blue-400 bg-white/90 outline-none"
-              style={{
-                top: popupRect.y * scale,
-                left: popupRect.x * scale,
-                width: Math.max(popupRect.width, 40) * scale,
-                minHeight: popupRect.height * scale,
-                fontSize: editingObject.fontSize * scale,
-                fontFamily: editingObject.fontFamily,
-                fontWeight: editingObject.bold ? "bold" : "normal",
-                fontStyle: editingObject.italic ? "italic" : "normal",
-                textDecoration: editingObject.underline ? "underline" : "none",
-                textAlign: editingObject.align,
-                color: editingObject.fill,
-                lineHeight: 1.2,
-                padding: 0,
-                transformOrigin: "top left",
-              }}
+            <PageBlock
+              page={page}
+              pageIndex={index}
+              scale={scale}
+              selected={selected}
+              editingId={editingId}
+              onFocusPage={setActivePage}
+              onSelectObject={(i, id) => setSelected({ page: i, id })}
+              onDeselect={() => setSelected(null)}
+              onUpdateObject={updateObjectOnPage}
+              onStartEditing={(i, id) => setEditingId({ page: i, id })}
+              onCommitEditing={commitEditing}
+              onDeletePage={deletePage}
+              canDelete={pages.length > 1}
             />
-          )}
+          </div>
+        ))}
 
-          {selectedObject?.type === "Text" && popupRect && (
-            <TextFormatPopup rect={popupRect} scale={scale} item={selectedObject} onChange={patchSelected} />
-          )}
-        </div>
+        {/* Add page at the end of the scroll, like turning to a new sheet */}
+        <button
+          onClick={addPage}
+          style={{ width: PAGE_WIDTH * scale, height: 96 * scale }}
+          className="flex items-center justify-center rounded-md border-2 border-dashed border-gray-400/60 text-gray-500 transition-colors hover:border-red-400 hover:text-red-500"
+        >
+          <Plus size={20} className="mr-2" /> Add page
+        </button>
       </div>
+
+      {/* Hidden export-only stage */}
+      <ExportStage page={exportPage} imageCache={imageCache.current} stageRef={exportStageRef} />
 
       {showExportModal && (
         <ExportPdfModal

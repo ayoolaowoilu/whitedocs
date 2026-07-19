@@ -27,8 +27,9 @@ export interface NavbarProps {
   isTextSelected: boolean;
   textColor?: string;
   onTextColorChange: (color: string) => void;
-
+ onAddPage:() => void;
   onExport: () => void;
+  pageLabel :string;
 }
 
 export default function Navbar({
