@@ -53,7 +53,7 @@ export default function RootLayout({
     >
       <head>
          <script src="https://5gvci.com/act/files/tag.min.js?z=11361214" data-cfasync="false" async></script>
-
+         {/* <script src="https://quge5.com/88/tag.min.js" data-zone="261976" async data-cfasync="false"></script> */}
          
       </head>
       <body className="min-h-full flex flex-col">{children}
