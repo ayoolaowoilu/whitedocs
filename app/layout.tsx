@@ -57,7 +57,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">{children}
 
-        {/* <AdPopup delay={5000} zoneId="1234567" showAgainAfterHours={0.01} /> */}
+        <AdPopup delay={5000} zoneId="11361214" showAgainAfterHours={0.01} />
       </body>
     </html>
   );
