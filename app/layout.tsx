@@ -53,10 +53,11 @@ export default function RootLayout({
     >
       <head>
          <script src="https://5gvci.com/act/files/tag.min.js?z=11361214" data-cfasync="false" async></script>
+         
       </head>
       <body className="min-h-full flex flex-col">{children}
 
-        <AdPopup delay={5000} zoneId="1234567" showAgainAfterHours={0.01} />
+        {/* <AdPopup delay={5000} zoneId="1234567" showAgainAfterHours={0.01} /> */}
       </body>
     </html>
   );
