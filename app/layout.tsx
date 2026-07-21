@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import AdPopup from "./components/adPopup";
 
@@ -52,21 +51,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-         <Script
-          id="ad-zone"
-          strategy="afterInteractive"
+        {/* Plain script tag — next/script cannot go inside <head> */}
+        <script
           dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11361537';s.src='https://nap5k.com/tag.min.js';document.body.appendChild(s)})(document.createElement('script'));`,
+            __html: `(function(s){s.dataset.zone='11361472';s.src='https://n6wxm.com/vignette.min.js';document.documentElement.appendChild(s)})(document.createElement('script'));`,
           }}
         />
       </head>
       <body className="min-h-full flex flex-col">
         {children}
-        
-        
-        
-        {/* Ad script - loads after page becomes interactive */}
-       
+        {/* <AdPopup delay={5000} adUrl="https://omg10.com/4/11361565" showAgainAfterHours={24} /> */}
       </body>
     </html>
   );
