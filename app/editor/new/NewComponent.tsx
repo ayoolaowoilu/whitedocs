@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Stage, Layer, Image, Text, Rect, Transformer } from "react-konva";
+import { Stage, Layer, Image, Text, Rect, Ellipse, Transformer } from "react-konva";
 import useImage from "use-image";
 import jsPDF from "jspdf";
 import { motion } from "framer-motion";
@@ -16,6 +16,8 @@ import {
   Minus,
   Plus,
   Download,
+  Trash2,
+  PenTool,
   X,
 } from "lucide-react";
 import Navbar from "@/app/components/EditorNavbar";
@@ -33,7 +35,7 @@ function preloadImage(src: string, cache: Map<string, HTMLImageElement>) {
   return new Promise<void>((resolve) => {
     if (cache.has(src)) return resolve();
     if (typeof window === "undefined") return resolve();
-    
+
     const img = new window.Image();
     img.onload = () => {
       cache.set(src, img);
@@ -107,6 +109,126 @@ function EditableImage({
         }}
       />
 
+      {selected && <Transformer ref={trRef} rotateEnabled keepRatio={false} />}
+    </>
+  );
+}
+
+function EditableShape({
+  item,
+  selected,
+  onSelect,
+  onChange,
+}: {
+  item: any;
+  selected: boolean;
+  onSelect: () => void;
+  onChange: (item: any) => void;
+}) {
+  const shapeRef = useRef<any>(null);
+  const trRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (selected && trRef.current && shapeRef.current) {
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer()?.batchDraw();
+    }
+  }, [selected]);
+
+  if (item.shapeType === "ellipse") {
+    const cx = item.x + item.width / 2;
+    const cy = item.y + item.height / 2;
+
+    return (
+      <>
+        <Ellipse
+          ref={shapeRef}
+          x={cx}
+          y={cy}
+          radiusX={item.width / 2}
+          radiusY={item.height / 2}
+          rotation={item.rotation}
+          fill={item.fill}
+          stroke={item.stroke}
+          strokeWidth={item.strokeWidth}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragEnd={(e) => {
+            const node = e.target;
+            onChange({
+              ...item,
+              x: node.x() - item.width / 2,
+              y: node.y() - item.height / 2,
+            });
+          }}
+          onTransformEnd={() => {
+            const node = shapeRef.current;
+            const scaleX = node.scaleX();
+            const scaleY = node.scaleY();
+
+            node.scaleX(1);
+            node.scaleY(1);
+
+            const newWidth = Math.max(10, item.width * scaleX);
+            const newHeight = Math.max(10, item.height * scaleY);
+
+            onChange({
+              ...item,
+              x: node.x() - newWidth / 2,
+              y: node.y() - newHeight / 2,
+              rotation: node.rotation(),
+              width: newWidth,
+              height: newHeight,
+            });
+          }}
+        />
+        {selected && <Transformer ref={trRef} rotateEnabled keepRatio={false} />}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Rect
+        ref={shapeRef}
+        x={item.x}
+        y={item.y}
+        width={item.width}
+        height={item.height}
+        rotation={item.rotation}
+        fill={item.fill}
+        stroke={item.stroke}
+        strokeWidth={item.strokeWidth}
+        cornerRadius={item.cornerRadius ?? 0}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={(e) =>
+          onChange({
+            ...item,
+            x: e.target.x(),
+            y: e.target.y(),
+          })
+        }
+        onTransformEnd={() => {
+          const node = shapeRef.current;
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+
+          node.scaleX(1);
+          node.scaleY(1);
+
+          onChange({
+            ...item,
+            x: node.x(),
+            y: node.y(),
+            rotation: node.rotation(),
+            width: Math.max(10, node.width() * scaleX),
+            height: Math.max(10, node.height() * scaleY),
+          });
+        }}
+      />
       {selected && <Transformer ref={trRef} rotateEnabled keepRatio={false} />}
     </>
   );
@@ -368,6 +490,186 @@ function ExportPdfModal({
   );
 }
 
+// Draw-your-own-signature pad. Draws to a canvas, trims the transparent
+// margins, and hands back a PNG data URL which gets dropped onto the page
+// as a regular image object.
+function SignatureModal({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: (dataUrl: string) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef(false);
+  const hasDrawnRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const [isEmpty, setIsEmpty] = useState(true);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx) return;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1a1a1a";
+  }, []);
+
+  const getPos = (e: any) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const startDraw = (e: any) => {
+    e.preventDefault();
+    drawingRef.current = true;
+    hasDrawnRef.current = true;
+    setIsEmpty(false);
+    lastPointRef.current = getPos(e);
+  };
+
+  const draw = (e: any) => {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const point = getPos(e);
+    const last = lastPointRef.current;
+    if (last) {
+      ctx.beginPath();
+      ctx.moveTo(last.x, last.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+    }
+    lastPointRef.current = point;
+  };
+
+  const endDraw = () => {
+    drawingRef.current = false;
+    lastPointRef.current = null;
+  };
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasDrawnRef.current = false;
+    setIsEmpty(true);
+  };
+
+  const confirm = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !hasDrawnRef.current) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const { width, height } = canvas;
+    const imageData = ctx.getImageData(0, 0, width, height).data;
+    let minX = width,
+      minY = height,
+      maxX = 0,
+      maxY = 0;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = imageData[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (maxX <= minX || maxY <= minY) {
+      onConfirm(canvas.toDataURL("image/png"));
+      return;
+    }
+
+    const pad = 8;
+    minX = Math.max(0, minX - pad);
+    minY = Math.max(0, minY - pad);
+    maxX = Math.min(width, maxX + pad);
+    maxY = Math.min(height, maxY + pad);
+
+    const trimmed = document.createElement("canvas");
+    trimmed.width = maxX - minX;
+    trimmed.height = maxY - minY;
+    const tctx = trimmed.getContext("2d");
+    if (tctx) {
+      tctx.drawImage(canvas, minX, minY, trimmed.width, trimmed.height, 0, 0, trimmed.width, trimmed.height);
+      onConfirm(trimmed.toDataURL("image/png"));
+    } else {
+      onConfirm(canvas.toDataURL("image/png"));
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+            <PenTool size={15} /> Draw your signature
+          </h2>
+          <button onClick={onCancel} className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+            <X size={16} />
+          </button>
+        </div>
+
+        <canvas
+          ref={canvasRef}
+          width={440}
+          height={200}
+          className="w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white"
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={endDraw}
+          onMouseLeave={endDraw}
+          onTouchStart={startDraw}
+          onTouchMove={draw}
+          onTouchEnd={endDraw}
+        />
+        <p className="mt-1.5 text-[11px] text-gray-400">
+          Draw with your mouse or finger, then insert it onto the current page.
+        </p>
+
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <button onClick={clear} className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+            Clear
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onCancel} className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+              Cancel
+            </button>
+            <button
+              onClick={confirm}
+              disabled={isEmpty}
+              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              <PenTool size={14} />
+              Insert signature
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StaticExportImage({ item, imageCache }: { item: any; imageCache: Map<string, HTMLImageElement> }) {
   const img = imageCache.get(item.src);
   if (!img) return null;
@@ -379,6 +681,38 @@ function StaticExportImage({ item, imageCache }: { item: any; imageCache: Map<st
       width={item.width}
       height={item.height}
       rotation={item.rotation}
+    />
+  );
+}
+
+function StaticExportShape({ item }: { item: any }) {
+  if (item.shapeType === "ellipse") {
+    const cx = item.x + item.width / 2;
+    const cy = item.y + item.height / 2;
+    return (
+      <Ellipse
+        x={cx}
+        y={cy}
+        radiusX={item.width / 2}
+        radiusY={item.height / 2}
+        rotation={item.rotation}
+        fill={item.fill}
+        stroke={item.stroke}
+        strokeWidth={item.strokeWidth}
+      />
+    );
+  }
+  return (
+    <Rect
+      x={item.x}
+      y={item.y}
+      width={item.width}
+      height={item.height}
+      rotation={item.rotation}
+      fill={item.fill}
+      stroke={item.stroke}
+      strokeWidth={item.strokeWidth}
+      cornerRadius={item.cornerRadius ?? 0}
     />
   );
 }
@@ -400,6 +734,9 @@ function ExportStage({
           {page?.objects.map((object: any) => {
             if (object.type === "Image") {
               return <StaticExportImage key={object.id} item={object} imageCache={imageCache} />;
+            }
+            if (object.type === "Shape") {
+              return <StaticExportShape key={object.id} item={object} />;
             }
             if (object.type === "Text") {
               return (
@@ -501,7 +838,7 @@ function PageBlock({
       className="group relative"
       style={{ width: PAGE_WIDTH * scale, height: PAGE_HEIGHT * scale }}
     >
-      <div className="pointer-events-none absolute -top-6 left-0 flex w-full items-center justify-between">
+      <div className="pointer-events-none absolute -top-7 left-0 flex w-full items-center justify-between">
         <span className="text-[11px] font-medium text-gray-500">Page {pageIndex + 1}</span>
         {canDelete && (
           <button
@@ -509,9 +846,10 @@ function PageBlock({
               e.stopPropagation();
               onDeletePage(pageIndex);
             }}
-            className="pointer-events-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-gray-400 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+            title="Delete page"
+            className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-400 opacity-70 shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 hover:opacity-100"
           >
-            <X size={12} /> Remove page
+            <Trash2 size={12} />
           </button>
         )}
       </div>
@@ -538,6 +876,20 @@ function PageBlock({
               if (object.type === "Image") {
                 return (
                   <EditableImage
+                    key={object.id}
+                    item={object}
+                    selected={selId === object.id}
+                    onSelect={() => {
+                      onFocusPage(pageIndex);
+                      onSelectObject(pageIndex, object.id);
+                    }}
+                    onChange={(item) => onUpdateObject(pageIndex, item)}
+                  />
+                );
+              }
+              if (object.type === "Shape") {
+                return (
+                  <EditableShape
                     key={object.id}
                     item={object}
                     selected={selId === object.id}
@@ -633,6 +985,7 @@ export default function Home() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportName, setExportName] = useState("document");
   const [exporting, setExporting] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
 
   const [exportPage, setExportPage] = useState<any | null>(null);
   const exportStageRef = useRef<any>(null);
@@ -747,6 +1100,65 @@ export default function Home() {
     );
     setSelected({ page: activePage, id });
     setTimeout(() => setEditingId({ page: activePage, id }), 0);
+  }, [activePage]);
+
+  const addShape = useCallback((shapeType: "rect" | "ellipse") => {
+    const id = crypto.randomUUID();
+    setPages((prev: any) =>
+      prev.map((p: any, i: number) =>
+        i === activePage
+          ? {
+              ...p,
+              objects: [
+                ...p.objects,
+                {
+                  type: "Shape",
+                  shapeType,
+                  id,
+                  x: 140,
+                  y: 140,
+                  width: 180,
+                  height: 120,
+                  rotation: 0,
+                  fill: "#fca5a5",
+                  stroke: "#dc2626",
+                  strokeWidth: 2,
+                  cornerRadius: shapeType === "rect" ? 0 : undefined,
+                },
+              ],
+            }
+          : p
+      )
+    );
+    setSelected({ page: activePage, id });
+  }, [activePage]);
+
+  const addSignatureToPage = useCallback((dataUrl: string) => {
+    const id = crypto.randomUUID();
+    setPages((prev: any) =>
+      prev.map((p: any, i: number) =>
+        i === activePage
+          ? {
+              ...p,
+              objects: [
+                ...p.objects,
+                {
+                  type: "Image",
+                  id,
+                  src: dataUrl,
+                  x: 120,
+                  y: PAGE_HEIGHT - 220,
+                  width: 220,
+                  height: 100,
+                  rotation: 0,
+                },
+              ],
+            }
+          : p
+      )
+    );
+    setSelected({ page: activePage, id });
+    setShowSignatureModal(false);
   }, [activePage]);
 
   const deleteSelected = useCallback(() => {
@@ -871,6 +1283,8 @@ export default function Home() {
       <Navbar
         onAddImage={() => fileInputRef.current?.click()}
         onAddText={addText}
+        onAddShape={addShape}
+        onAddSignature={() => setShowSignatureModal(true)}
         onAddPage={addPage}
         hasSelection={!!selected}
         onDuplicate={duplicateSelected}
@@ -880,6 +1294,9 @@ export default function Home() {
         isTextSelected={selectedObject?.type === "Text"}
         textColor={selectedObject?.type === "Text" ? selectedObject.fill : undefined}
         onTextColorChange={(color: any) => patchSelected({ fill: color })}
+        isShapeSelected={selectedObject?.type === "Shape"}
+        shapeFill={selectedObject?.type === "Shape" ? selectedObject.fill : undefined}
+        onShapeFillChange={(color: any) => patchSelected({ fill: color })}
         onExport={openExportModal}
         pageLabel={`Page ${activePage + 1} / ${pages.length}`}
       />
@@ -934,6 +1351,10 @@ export default function Home() {
           onConfirm={confirmExport}
           busy={exporting}
         />
+      )}
+
+      {showSignatureModal && (
+        <SignatureModal onCancel={() => setShowSignatureModal(false)} onConfirm={addSignatureToPage} />
       )}
     </main>
   );

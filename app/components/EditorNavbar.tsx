@@ -4,6 +4,10 @@ import { useState } from "react";
 import {
   Image as ImageIcon,
   Type as TypeIcon,
+  Square,
+  Circle as CircleIcon,
+  PenTool,
+  Plus,
   Trash2,
   Copy,
   BringToFront,
@@ -11,12 +15,15 @@ import {
   Download,
   Menu,
   PenSquare,
+  ChevronDown,
 } from "lucide-react";
 import MainNav from "./main_navbar";
 
 export interface NavbarProps {
   onAddImage: () => void;
   onAddText: () => void;
+  onAddShape: (shapeType: "rect" | "ellipse") => void;
+  onAddSignature: () => void;
 
   hasSelection: boolean;
   onDuplicate: () => void;
@@ -27,14 +34,35 @@ export interface NavbarProps {
   isTextSelected: boolean;
   textColor?: string;
   onTextColorChange: (color: string) => void;
- onAddPage:() => void;
+
+  isShapeSelected?: boolean;
+  shapeFill?: string;
+  onShapeFillChange?: (color: string) => void;
+
+  onAddPage: () => void;
   onExport: () => void;
-  pageLabel :string;
+  pageLabel: string;
+}
+
+// Small "add" indicator so people know these buttons insert a new element.
+function AddBadgeIcon({ icon }: { icon: React.ReactNode }) {
+  return (
+    <span className="relative inline-flex">
+      {icon}
+      <Plus
+        size={8}
+        strokeWidth={3}
+        className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 p-[1px] text-white"
+      />
+    </span>
+  );
 }
 
 export default function Navbar({
   onAddImage,
   onAddText,
+  onAddShape,
+  onAddSignature,
   hasSelection,
   onDuplicate,
   onBringToFront,
@@ -43,9 +71,13 @@ export default function Navbar({
   isTextSelected,
   textColor = "#1a1a1a",
   onTextColorChange,
+  isShapeSelected,
+  shapeFill = "#fca5a5",
+  onShapeFillChange,
   onExport,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shapesOpen, setShapesOpen] = useState(false);
 
   return (
     <nav className="fixed inset-x-0 top-11 z-40 border-b border-gray-200 bg-white shadow-sm">
@@ -63,7 +95,7 @@ export default function Navbar({
             onClick={onAddImage}
             className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
           >
-            <ImageIcon size={14} />
+            <AddBadgeIcon icon={<ImageIcon size={14} />} />
             <span className="hidden sm:inline">Image</span>
           </button>
 
@@ -71,8 +103,52 @@ export default function Navbar({
             onClick={onAddText}
             className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
           >
-            <TypeIcon size={14} />
+            <AddBadgeIcon icon={<TypeIcon size={14} />} />
             <span className="hidden sm:inline">Text</span>
+          </button>
+
+          <div className="relative hidden sm:block">
+            <button
+              onClick={() => setShapesOpen((v) => !v)}
+              className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+            >
+              <AddBadgeIcon icon={<Square size={14} />} />
+              <span className="hidden sm:inline">Shape</span>
+              <ChevronDown size={12} className="text-gray-400" />
+            </button>
+            {shapesOpen && (
+              <div
+                className="absolute left-0 top-full z-30 mt-1 flex w-36 flex-col rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+                onMouseLeave={() => setShapesOpen(false)}
+              >
+                <button
+                  onClick={() => {
+                    onAddShape("rect");
+                    setShapesOpen(false);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100"
+                >
+                  <Square size={13} /> Rectangle
+                </button>
+                <button
+                  onClick={() => {
+                    onAddShape("ellipse");
+                    setShapesOpen(false);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100"
+                >
+                  <CircleIcon size={13} /> Ellipse
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={onAddSignature}
+            className="hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 sm:flex"
+          >
+            <PenTool size={14} />
+            <span className="hidden sm:inline">Signature</span>
           </button>
 
           <div className="mx-1 hidden h-5 w-px bg-gray-200 sm:block" />
@@ -133,6 +209,19 @@ export default function Navbar({
             </div>
           )}
 
+          {isShapeSelected && (
+            <div className="hidden items-center gap-1.5 rounded-md border border-gray-200 px-1.5 py-1 sm:flex">
+              <span className="text-[11px] font-medium text-gray-500">Fill</span>
+              <input
+                type="color"
+                value={shapeFill}
+                onChange={(e) => onShapeFillChange?.(e.target.value)}
+                className="h-6 w-6 cursor-pointer rounded border border-gray-200 p-0.5"
+                title="Shape fill"
+              />
+            </div>
+          )}
+
           <button
             onClick={onExport}
             className="flex items-center gap-1.5 rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-700"
@@ -145,6 +234,27 @@ export default function Navbar({
 
       {mobileMenuOpen && (
         <div className="flex flex-wrap items-center gap-1 border-t border-gray-100 px-2 py-1.5 sm:hidden">
+          <button
+            onClick={() => onAddShape("rect")}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <Square size={14} />
+            Rectangle
+          </button>
+          <button
+            onClick={() => onAddShape("ellipse")}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <CircleIcon size={14} />
+            Ellipse
+          </button>
+          <button
+            onClick={onAddSignature}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <PenTool size={14} />
+            Signature
+          </button>
           <button
             onClick={onDuplicate}
             disabled={!hasSelection}
@@ -184,6 +294,17 @@ export default function Navbar({
                 type="color"
                 value={textColor}
                 onChange={(e) => onTextColorChange(e.target.value)}
+                className="h-6 w-6 cursor-pointer rounded border border-gray-200 p-0.5"
+              />
+            </div>
+          )}
+          {isShapeSelected && (
+            <div className="flex items-center gap-1.5 rounded-md border border-gray-200 px-1.5 py-1">
+              <span className="text-[11px] font-medium text-gray-500">Fill</span>
+              <input
+                type="color"
+                value={shapeFill}
+                onChange={(e) => onShapeFillChange?.(e.target.value)}
                 className="h-6 w-6 cursor-pointer rounded border border-gray-200 p-0.5"
               />
             </div>
