@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import AdPopup from "./components/adPopup";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,10 +53,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
-        <Script
-          dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11361472';s.src='https://n6wxm.com/vignette.min.js';document.body.appendChild(s)})(document.createElement('script'));`,
-          }}
+        
+        {/* Ad Popup - uncommented and configured with your direct link */}
+        <AdPopup 
+          delay={5000} 
+          adUrl="https://omg10.com/4/11361565"
+          showAgainAfterHours={24} 
         />
       </body>
     </html>

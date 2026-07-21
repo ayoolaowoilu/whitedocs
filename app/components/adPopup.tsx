@@ -1,131 +1,103 @@
-// components/AdPopup.tsx
+// components/adPopup.tsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { X } from "lucide-react";
 
 interface AdPopupProps {
-  delay?: number;
-  zoneId?: string;
-  // How many hours before ad shows again after close (0 = never)
-  showAgainAfterHours?: number;
-  fallbackImage?: string;
-  fallbackLink?: string;
-  fallbackTitle?: string;
-  onClose?: () => void;
+  delay?: number; // ms before showing
+  showAgainAfterHours?: number; // hours before showing again
+  adUrl?: string; // direct ad link
+  zoneId?: string; // optional zone ID
 }
 
+const STORAGE_KEY = "adPopupLastShown";
+
 export default function AdPopup({
-  delay = 4000,
+  delay = 5000,
+  showAgainAfterHours = 24,
+  adUrl = "https://omg10.com/4/11361565",
   zoneId,
-  showAgainAfterHours = 0, // 0 = never show again
-  fallbackImage = "https://via.placeholder.com/320x180/3b82f6/ffffff?text=Special+Offer",
-  fallbackLink = "https://example.com",
-  fallbackTitle = "Special Offer",
-  onClose,
 }: AdPopupProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(true); // start hidden until checked
-  const adContainerRef = useRef<HTMLDivElement>(null);
-  const scriptLoaded = useRef(false);
-
-  const storageKey = "adPopupDismissed";
-  const storageTimeKey = "adPopupDismissedAt";
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(storageKey);
-    const dismissedAt = localStorage.getItem(storageTimeKey);
+    setIsClient(true);
+    
+    // Check if we should show the popup
+    const lastShown = localStorage.getItem(STORAGE_KEY);
+    const now = Date.now();
+    const hoursSinceLastShown = lastShown
+      ? (now - parseInt(lastShown)) / (1000 * 60 * 60)
+      : Infinity;
 
-    let shouldShow = true;
-
-    if (dismissed === "true" && dismissedAt) {
-      if (showAgainAfterHours === 0) {
-        shouldShow = false;
-      } else {
-        const hoursSince = (Date.now() - parseInt(dismissedAt)) / (1000 * 60 * 60);
-        shouldShow = hoursSince >= showAgainAfterHours;
-      }
+    if (hoursSinceLastShown >= showAgainAfterHours) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, delay);
+      return () => clearTimeout(timer);
     }
-
-    if (!shouldShow) {
-      setIsDismissed(true);
-      return;
-    }
-
-    setIsDismissed(false);
-
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-
-      if (zoneId && adContainerRef.current && !scriptLoaded.current) {
-        const script = document.createElement("script");
-        script.async = true;
-        script.dataset.cfasync = "false";
-        script.src = `//propellerads.com/api/v1/publisher/zones/${zoneId}/native.js`;
-        adContainerRef.current.appendChild(script);
-        scriptLoaded.current = true;
-      }
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [delay, zoneId, showAgainAfterHours]);
+  }, [delay, showAgainAfterHours]);
 
   const handleClose = useCallback(() => {
     setIsVisible(false);
-    setIsDismissed(true);
-    localStorage.setItem(storageKey, "true");
-    localStorage.setItem(storageTimeKey, Date.now().toString());
-    onClose?.();
-  }, [onClose]);
+    localStorage.setItem(STORAGE_KEY, Date.now().toString());
+  }, []);
 
-  if (isDismissed) return null;
+  const handleAdClick = useCallback(() => {
+    // Open ad in new tab
+    window.open(adUrl, "_blank", "noopener,noreferrer");
+    handleClose();
+  }, [adUrl, handleClose]);
+
+  // Don't render during SSR
+  if (!isClient || !isVisible) return null;
 
   return (
-    <div
-      className={`
-        fixed bottom-4 right-4 z-50
-        w-80 sm:w-96
-        bg-white rounded-xl shadow-2xl
-        border border-gray-200
-        transform transition-all duration-500 ease-out
-        ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"}
-      `}
-    >
-      {/* Close button */}
-      <button
-        onClick={handleClose}
-        className="absolute -top-3 -right-3 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center text-lg leading-none hover:bg-gray-700 transition-colors shadow-lg cursor-pointer z-10"
-        aria-label="Close ad"
-      >
-        ×
-      </button>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in zoom-in-95 duration-300">
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+          aria-label="Close ad"
+        >
+          <X size={18} />
+        </button>
 
-      {/* Ad content */}
-      <div className="p-3">
-        {zoneId ? (
-          <div
-            ref={adContainerRef}
-            className="min-h-[180px] rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center"
-          >
-            <span className="text-xs text-gray-400">Loading...</span>
+        {/* Ad content - Option 1: Clickable banner/image */}
+        <div
+          onClick={handleAdClick}
+          className="cursor-pointer group"
+        >
+          <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-8 text-center">
+            <h3 className="text-white text-2xl font-bold mb-2">
+              Sponsored Content
+            </h3>
+            <p className="text-white/80 text-sm mb-4">
+              Click to view our partner's offer
+            </p>
+            <button className="bg-white text-blue-600 px-6 py-2 rounded-full font-semibold hover:bg-white/90 transition-colors">
+              View Offer
+            </button>
           </div>
-        ) : (
-          <a
-            href={fallbackLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-          >
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-              <img
-                src={fallbackImage}
-                alt={fallbackTitle}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h3 className="font-semibold text-gray-900 text-sm mt-2">{fallbackTitle}</h3>
-            <p className="text-xs text-gray-500 mt-1">Sponsored</p>
-          </a>
-        )}
+          
+          {/* Optional: Show the actual ad URL for transparency */}
+          <div className="px-4 py-2 bg-gray-50 text-xs text-gray-400 text-center truncate">
+            {adUrl}
+          </div>
+        </div>
+
+        {/* Option 2: Iframe (uncomment if the ad supports iframe embedding) */}
+        {/* 
+        <iframe
+          src={adUrl}
+          className="w-full h-[400px] border-0"
+          sandbox="allow-scripts allow-same-origin"
+          title="Advertisement"
+        />
+        */}
       </div>
     </div>
   );
