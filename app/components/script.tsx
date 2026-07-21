@@ -5,8 +5,7 @@ import { useEffect } from "react";
 
 export default function AdScript() {
   useEffect(() => {
-    // Only run once
-    if (document.querySelector('script[data-zone="11361472"]')) return;
+    
 
     const script = document.createElement("script");
     script.dataset.zone = "11361472";
