@@ -58,7 +58,9 @@ export default function RootLayout({
         <AdPopup 
           delay={5000} 
           adUrl="https://omg10.com/4/11361565"
-          showAgainAfterHours={24} 
+          showAgainAfterHours={0.01
+            
+          } 
         />
       </body>
     </html>
