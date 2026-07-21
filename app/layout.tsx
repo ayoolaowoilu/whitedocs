@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AdPopup from "./components/adPopup";
+import AdScript from "./components/script";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,17 +51,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        {/* Plain script tag — next/script cannot go inside <head> */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11361472';s.src='https://n6wxm.com/vignette.min.js';document.documentElement.appendChild(s)})(document.createElement('script'));`,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col">
+        <AdScript />
         {children}
-        {/* <AdPopup delay={5000} adUrl="https://omg10.com/4/11361565" showAgainAfterHours={24} /> */}
       </body>
     </html>
   );
