@@ -53,8 +53,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <Script
-          id="ad-zone"
-          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(s){s.dataset.zone='11361472';s.src='https://n6wxm.com/vignette.min.js';document.body.appendChild(s)})(document.createElement('script'));`,
           }}
