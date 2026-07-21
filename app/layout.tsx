@@ -51,17 +51,22 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+         <Script
+          id="ad-zone"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(s){s.dataset.zone='11361537';s.src='https://nap5k.com/tag.min.js';document.body.appendChild(s)})(document.createElement('script'));`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         
-        {/* Ad Popup - uncommented and configured with your direct link */}
-        <AdPopup 
-          delay={5000} 
-          adUrl="https://omg10.com/4/11361565"
-          showAgainAfterHours={0.01
-            
-          } 
-        />
+        
+        
+        {/* Ad script - loads after page becomes interactive */}
+       
       </body>
     </html>
   );
