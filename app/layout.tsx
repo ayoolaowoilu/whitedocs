@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
-import AdPopup from "./components/adPopup";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-
+export const metadata: Metadata = {
   title: "WhiteDocs",
   description: "Free Open Source PDF Editor",
   icons: {
@@ -43,22 +42,23 @@ export const metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-         
- <script>{(function(s){s.dataset.zone='11361472',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement as any , document.body].filter(Boolean).pop().appendChild(document.createElement('script')))}</script>
-         
-      </head>
-      <body className="min-h-full flex flex-col">{children}
-
-        {/* <AdPopup delay={5000} zoneId="11361337" showAgainAfterHours={0.01} /> */}
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Script
+          id="ad-zone"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(s){s.dataset.zone='11361472';s.src='https://n6wxm.com/vignette.min.js';document.body.appendChild(s)})(document.createElement('script'));`,
+          }}
+        />
       </body>
     </html>
   );
