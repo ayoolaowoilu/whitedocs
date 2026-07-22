@@ -7,6 +7,7 @@ import {
   Square,
   Circle,
   PenTool,
+  Plus,
   Trash2,
   Copy,
   BringToFront,
@@ -39,6 +40,21 @@ export interface PdfEditorNavbarProps {
   onExport: () => void;
   exportDisabled: boolean;
   pageLabel: string;
+}
+
+// Small "+" indicator so people know these buttons insert a new element,
+// rather than act on whatever is currently selected.
+function AddBadgeIcon({ icon }: { icon: React.ReactNode }) {
+  return (
+    <span className="relative inline-flex">
+      {icon}
+      <Plus
+        size={8}
+        strokeWidth={3}
+        className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 p-[1px] text-white"
+      />
+    </span>
+  );
 }
 
 export default function PdfEditorNavbar({
@@ -74,29 +90,53 @@ export default function PdfEditorNavbar({
             <span className="hidden text-xs font-semibold text-gray-800 sm:inline">PDF Editor</span>
           </div>
 
-          <button onClick={onImportPdf} className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-            <UploadCloud size={14} />
+          <button
+            onClick={onImportPdf}
+            title="Import a PDF"
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <AddBadgeIcon icon={<UploadCloud size={14} />} />
             <span className="hidden sm:inline">Import</span>
           </button>
 
           <div className="mx-1 hidden h-5 w-px bg-gray-200 sm:block" />
 
-          <button onClick={onAddText} className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-            <TypeIcon size={14} />
+          <button
+            onClick={onAddText}
+            title="Add text"
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <AddBadgeIcon icon={<TypeIcon size={14} />} />
             <span className="hidden sm:inline">Text</span>
           </button>
-          <button onClick={onAddImage} className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-            <ImageIcon size={14} />
+          <button
+            onClick={onAddImage}
+            title="Add image"
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <AddBadgeIcon icon={<ImageIcon size={14} />} />
             <span className="hidden sm:inline">Image</span>
           </button>
-          <button onClick={onAddRect} className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-            <Square size={14} />
+          <button
+            onClick={onAddRect}
+            title="Add rectangle"
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <AddBadgeIcon icon={<Square size={14} />} />
           </button>
-          <button onClick={onAddEllipse} className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-            <Circle size={14} />
+          <button
+            onClick={onAddEllipse}
+            title="Add ellipse"
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <AddBadgeIcon icon={<Circle size={14} />} />
           </button>
-          <button onClick={onAddSignature} className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-            <PenTool size={14} />
+          <button
+            onClick={onAddSignature}
+            title="Add signature"
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <AddBadgeIcon icon={<PenTool size={14} />} />
             <span className="hidden sm:inline">Sign</span>
           </button>
 
