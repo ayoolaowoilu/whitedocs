@@ -1147,7 +1147,7 @@ export default function Home() {
                   id,
                   src: dataUrl,
                   x: 120,
-                  y: PAGE_HEIGHT - 220,
+                  y: 60,
                   width: 220,
                   height: 100,
                   rotation: 0,

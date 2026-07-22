@@ -15,7 +15,6 @@ import {
   Download,
   Menu,
   PenSquare,
-  ChevronDown,
 } from "lucide-react";
 import MainNav from "./main_navbar";
 
@@ -77,7 +76,6 @@ export default function Navbar({
   onExport,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [shapesOpen, setShapesOpen] = useState(false);
 
   return (
     <nav className="fixed inset-x-0 top-11 z-40 border-b border-gray-200 bg-white shadow-sm">
@@ -93,6 +91,7 @@ export default function Navbar({
 
           <button
             onClick={onAddImage}
+            title="Add image"
             className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
           >
             <AddBadgeIcon icon={<ImageIcon size={14} />} />
@@ -101,53 +100,37 @@ export default function Navbar({
 
           <button
             onClick={onAddText}
+            title="Add text"
             className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
           >
             <AddBadgeIcon icon={<TypeIcon size={14} />} />
             <span className="hidden sm:inline">Text</span>
           </button>
 
-          <div className="relative hidden sm:block">
-            <button
-              onClick={() => setShapesOpen((v) => !v)}
-              className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
-            >
-              <AddBadgeIcon icon={<Square size={14} />} />
-              <span className="hidden sm:inline">Shape</span>
-              <ChevronDown size={12} className="text-gray-400" />
-            </button>
-            {shapesOpen && (
-              <div
-                className="absolute left-0 top-full z-30 mt-1 flex w-36 flex-col rounded-md border border-gray-200 bg-white py-1 shadow-lg"
-                onMouseLeave={() => setShapesOpen(false)}
-              >
-                <button
-                  onClick={() => {
-                    onAddShape("rect");
-                    setShapesOpen(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100"
-                >
-                  <Square size={13} /> Rectangle
-                </button>
-                <button
-                  onClick={() => {
-                    onAddShape("ellipse");
-                    setShapesOpen(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100"
-                >
-                  <CircleIcon size={13} /> Ellipse
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => onAddShape("rect")}
+            title="Add square"
+            className="hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 sm:flex"
+          >
+            <AddBadgeIcon icon={<Square size={14} />} />
+            <span className="hidden sm:inline">Square</span>
+          </button>
+
+          <button
+            onClick={() => onAddShape("ellipse")}
+            title="Add oval"
+            className="hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 sm:flex"
+          >
+            <AddBadgeIcon icon={<CircleIcon size={14} />} />
+            <span className="hidden sm:inline">Oval</span>
+          </button>
 
           <button
             onClick={onAddSignature}
+            title="Add signature"
             className="hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 sm:flex"
           >
-            <PenTool size={14} />
+            <AddBadgeIcon icon={<PenTool size={14} />} />
             <span className="hidden sm:inline">Signature</span>
           </button>
 
@@ -239,14 +222,14 @@ export default function Navbar({
             className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
           >
             <Square size={14} />
-            Rectangle
+            Square
           </button>
           <button
             onClick={() => onAddShape("ellipse")}
             className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
           >
             <CircleIcon size={14} />
-            Ellipse
+            Oval
           </button>
           <button
             onClick={onAddSignature}
