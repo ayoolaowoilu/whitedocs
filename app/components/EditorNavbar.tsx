@@ -78,7 +78,8 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed inset-x-0 top-11 z-40 border-b border-gray-200 bg-white shadow-sm">
+      <div>
+            <nav className="fixed inset-x-0 top-11 z-40 border-b border-gray-200 bg-white shadow-sm">
       <MainNav />
       <div className="flex h-11 items-center justify-between gap-2 px-2 sm:px-3">
         <div className="flex items-center gap-0.5 overflow-x-auto sm:gap-1">
@@ -295,5 +296,7 @@ export default function Navbar({
         </div>
       )}
     </nav>
+     <div className="h-20"></div>
+      </div>
   );
 }
